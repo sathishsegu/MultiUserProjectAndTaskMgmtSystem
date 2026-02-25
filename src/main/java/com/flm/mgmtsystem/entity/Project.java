@@ -37,7 +37,7 @@ public class Project {
     private Boolean isActive;
 
     @PrePersist
-    protected void onCreate() {
+    protected void onProjectCreate() {
         this.projectCreatedAt = LocalDateTime.now();
         this.isActive = true;
     }

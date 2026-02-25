@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -33,7 +35,10 @@ public class User {
     private LocalDateTime createdAt;
 
     @PrePersist
-    protected void onCreate() {
+    protected void onUserCreate() {
         this.createdAt = LocalDateTime.now();
     }
+
+    @ManyToMany(mappedBy = "users")
+    private Set<Project> projects = new HashSet<>();
 }
