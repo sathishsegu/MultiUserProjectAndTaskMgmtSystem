@@ -22,4 +22,28 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
+        ErrorResponse response = new ErrorResponse();
+        response.setTimeStamp(LocalDateTime.now());
+        response.setStatus(HttpStatus.NOT_FOUND.value());
+        response.setError(HttpStatus.NOT_FOUND.getReasonPhrase());
+        response.setMessage(ex.getMessage());
+        response.setPath(request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(UnAuthorizedActionException.class)
+    public ResponseEntity<ErrorResponse> handleUnAuthorizedAction(UnAuthorizedActionException ex, HttpServletRequest request) {
+        ErrorResponse response = new ErrorResponse();
+        response.setTimeStamp(LocalDateTime.now());
+        response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        response.setError(HttpStatus.UNAUTHORIZED.getReasonPhrase());
+        response.setMessage(ex.getMessage());
+        response.setPath(request.getRequestURI());
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
 }

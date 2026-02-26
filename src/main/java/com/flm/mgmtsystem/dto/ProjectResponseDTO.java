@@ -15,7 +15,7 @@ public class ProjectResponseDTO {
     private Long projectId;
     private String projectName;
     private String description;
-    private User createdBy;
     private LocalDateTime projectCreatedAt;
     private Boolean isActive;
+    private UserSemiDetailsDTO createdBy;
 }

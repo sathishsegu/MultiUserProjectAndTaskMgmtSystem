@@ -23,6 +23,6 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserResponseDTO> createStudent(@Valid @RequestBody UserRequestDTO dto) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.createUser(dto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(dto));
     }
 }
