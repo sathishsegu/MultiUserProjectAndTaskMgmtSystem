@@ -3,6 +3,7 @@ package com.flm.mgmtsystem.controller;
 import com.flm.mgmtsystem.dto.ReAssignTaskRequestDTO;
 import com.flm.mgmtsystem.dto.TaskRequestDTO;
 import com.flm.mgmtsystem.dto.TaskResponseDTO;
+import com.flm.mgmtsystem.dto.UpdateTaskStatusRequestDTO;
 import com.flm.mgmtsystem.service.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -34,5 +35,14 @@ public class TaskController {
             @Valid @RequestBody ReAssignTaskRequestDTO dto
             ) {
         return ResponseEntity.status(HttpStatus.OK).body(taskService.reAssignTask(taskId, userId, dto));
+    }
+
+    @PutMapping("/{taskId}/status")
+    public ResponseEntity<TaskResponseDTO> changeStatus(
+            @PathVariable Long taskId,
+            @RequestHeader ("X-USER-ID") Long userId,
+            @Valid @RequestBody UpdateTaskStatusRequestDTO dto
+            ) {
+        return ResponseEntity.status(HttpStatus.OK).body(taskService.changeTaskStatus(taskId, userId, dto));
     }
 }

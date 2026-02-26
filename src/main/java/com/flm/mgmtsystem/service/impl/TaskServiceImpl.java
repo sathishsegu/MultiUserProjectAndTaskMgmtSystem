@@ -3,19 +3,17 @@ package com.flm.mgmtsystem.service.impl;
 import com.flm.mgmtsystem.dto.ReAssignTaskRequestDTO;
 import com.flm.mgmtsystem.dto.TaskRequestDTO;
 import com.flm.mgmtsystem.dto.TaskResponseDTO;
+import com.flm.mgmtsystem.dto.UpdateTaskStatusRequestDTO;
 import com.flm.mgmtsystem.entity.Project;
 import com.flm.mgmtsystem.entity.Task;
 import com.flm.mgmtsystem.entity.User;
 import com.flm.mgmtsystem.entity.enums.Role;
-import com.flm.mgmtsystem.exception.InvalidAssignmentException;
-import com.flm.mgmtsystem.exception.InvalidProjectStateException;
-import com.flm.mgmtsystem.exception.ResourceNotFoundException;
-import com.flm.mgmtsystem.exception.UnAuthorizedActionException;
+import com.flm.mgmtsystem.entity.enums.Status;
+import com.flm.mgmtsystem.exception.*;
 import com.flm.mgmtsystem.repository.ProjectRepository;
 import com.flm.mgmtsystem.repository.TaskRepository;
 import com.flm.mgmtsystem.repository.UserRepository;
 import com.flm.mgmtsystem.service.TaskService;
-import jakarta.persistence.OptimisticLockException;
 import org.modelmapper.ModelMapper;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
@@ -111,5 +109,54 @@ public class TaskServiceImpl implements TaskService {
         task.setAssignedTo(newUser);
         Task updatedTask = taskRepository.save(task);
         return modelMapper.map(updatedTask, TaskResponseDTO.class);
+    }
+
+    private void validateTransition(Status current, Status newStatus) {
+        switch (current) {
+            case TODO :
+                if(newStatus != Status.IN_PROGRESS) {
+                    throw new InvalidTaskTransitionException("TODO can move only to IN_PROGRESS");
+                }
+                break;
+
+            case IN_PROGRESS :
+                if(newStatus != Status.BLOCKED && newStatus != Status.DONE) {
+                    throw new InvalidTaskTransitionException("IN_PROGRESS can move only to BLOCKED or DONE");
+                }
+                break;
+
+            case BLOCKED :
+                if(newStatus != Status.IN_PROGRESS) {
+                    throw new InvalidTaskTransitionException("BLOCKED can move only to IN_PROGRESS");
+                }
+                break;
+
+            case DONE :
+                throw new InvalidTaskTransitionException("DONE cannot be changed");
+        }
+    }
+
+    @Override
+    public TaskResponseDTO changeTaskStatus(Long taskId, Long userId, UpdateTaskStatusRequestDTO dto) {
+       User user = userRepository.findById(userId)
+               .orElseThrow(() -> new ResourceNotFoundException("User not found with ID - " + userId));
+       if(user.getRole() != Role.DEVELOPER) {
+           throw new UnAuthorizedActionException("Only DEVELOPER can change task status");
+       }
+
+       Task task = taskRepository.findById(taskId)
+               .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID - " + taskId));
+       if(!task.getVersion().equals(dto.getVersion())) {
+           throw new ObjectOptimisticLockingFailureException(Task.class, taskId);
+       }
+
+       if(!task.getProject().getIsActive()) {
+           throw new InvalidProjectStateException("Cannot update task in inactive project");
+       }
+
+       validateTransition(task.getStatus(), dto.getStatus());
+       task.setStatus(dto.getStatus());
+       Task updatedTask = taskRepository.save(task);
+       return modelMapper.map(updatedTask, TaskResponseDTO.class);
     }
 }
