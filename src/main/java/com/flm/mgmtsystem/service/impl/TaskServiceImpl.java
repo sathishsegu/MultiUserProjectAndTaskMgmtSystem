@@ -1,5 +1,6 @@
 package com.flm.mgmtsystem.service.impl;
 
+import com.flm.mgmtsystem.dto.ReAssignTaskRequestDTO;
 import com.flm.mgmtsystem.dto.TaskRequestDTO;
 import com.flm.mgmtsystem.dto.TaskResponseDTO;
 import com.flm.mgmtsystem.entity.Project;
@@ -14,7 +15,9 @@ import com.flm.mgmtsystem.repository.ProjectRepository;
 import com.flm.mgmtsystem.repository.TaskRepository;
 import com.flm.mgmtsystem.repository.UserRepository;
 import com.flm.mgmtsystem.service.TaskService;
+import jakarta.persistence.OptimisticLockException;
 import org.modelmapper.ModelMapper;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -68,5 +71,45 @@ public class TaskServiceImpl implements TaskService {
         task.setAssignedTo(assignedUser);
         Task savedTask = taskRepository.save(task);
         return modelMapper.map(savedTask, TaskResponseDTO.class);
+    }
+
+    @Override
+    public TaskResponseDTO reAssignTask(Long taskId, Long userId, ReAssignTaskRequestDTO dto) {
+        User manager = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Manager not found with ID - " + userId));
+        if(manager.getRole() != Role.MANAGER) {
+            throw new UnAuthorizedActionException("Only MANAGER can re assign a task");
+        }
+
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID - " + taskId));
+
+        if (!task.getVersion().equals(dto.getVersion())) {
+            throw new ObjectOptimisticLockingFailureException(Task.class, taskId);
+        }
+
+        Project project = task.getProject();
+
+        if (!project.getIsActive()) {
+            throw new InvalidProjectStateException("Cannot reassign task in inactive project");
+        }
+
+        User newUser = userRepository.findById(dto.getNewAssignedUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID - " + dto.getNewAssignedUserId()));
+
+        Set<User> projectUsers = new HashSet<>(project.getUsers());
+
+        if(!projectUsers.contains(newUser)) {
+            throw new InvalidAssignmentException("User not assigned to this project");
+
+        }
+
+        if(newUser.getRole() != Role.DEVELOPER) {
+            throw new InvalidAssignmentException("Task can be only assigned to the Developers");
+        }
+
+        task.setAssignedTo(newUser);
+        Task updatedTask = taskRepository.save(task);
+        return modelMapper.map(updatedTask, TaskResponseDTO.class);
     }
 }

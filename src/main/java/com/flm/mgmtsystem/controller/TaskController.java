@@ -1,5 +1,6 @@
 package com.flm.mgmtsystem.controller;
 
+import com.flm.mgmtsystem.dto.ReAssignTaskRequestDTO;
 import com.flm.mgmtsystem.dto.TaskRequestDTO;
 import com.flm.mgmtsystem.dto.TaskResponseDTO;
 import com.flm.mgmtsystem.service.TaskService;
@@ -24,5 +25,14 @@ public class TaskController {
             @Valid @RequestBody TaskRequestDTO dto
             ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(taskService.createTask(userId, dto));
+    }
+
+    @PutMapping("/{taskId}/reassign")
+    public ResponseEntity<TaskResponseDTO> reassignTask(
+            @PathVariable Long taskId,
+            @RequestHeader ("X-USER-ID") Long userId,
+            @Valid @RequestBody ReAssignTaskRequestDTO dto
+            ) {
+        return ResponseEntity.status(HttpStatus.OK).body(taskService.reAssignTask(taskId, userId, dto));
     }
 }
