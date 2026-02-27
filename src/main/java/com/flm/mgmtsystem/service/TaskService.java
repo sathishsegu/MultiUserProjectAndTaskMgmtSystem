@@ -9,6 +9,6 @@ public interface TaskService {
     TaskResponseDTO reAssignTask(Long taskId, Long userId, ReAssignTaskRequestDTO dto);
     TaskResponseDTO changeTaskStatus(Long taskId, Long userId, UpdateTaskStatusRequestDTO dto);
     Page<TaskResponseDTO> getTasksByProject(Long projectId, Long userId, Integer page, Integer size, String sortBy, String sortDir);
-    Page<TaskResponseDTO> getTasksByUser(Long userId, Integer page, Integer size, String sortBy, String sortDir);
+    Page<TaskResponseDTO> getTasksByUser(Long userId, Long requesterId, Integer page, Integer size, String sortBy, String sortDir);
     Page<TaskResponseDTO> getTasksByStatus(Status status, Long userId, Integer page, Integer size, String sortBy, String sortDir);
 }

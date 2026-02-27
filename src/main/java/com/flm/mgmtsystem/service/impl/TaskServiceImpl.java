@@ -141,18 +141,24 @@ public class TaskServiceImpl implements TaskService {
     public TaskResponseDTO changeTaskStatus(Long taskId, Long userId, UpdateTaskStatusRequestDTO dto) {
        User user = userRepository.findById(userId)
                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID - " + userId));
-       if(user.getRole() != Role.DEVELOPER) {
-           throw new UnAuthorizedActionException("Only DEVELOPER can change task status");
-       }
 
        Task task = taskRepository.findById(taskId)
                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID - " + taskId));
-       if(!task.getVersion().equals(dto.getVersion())) {
-           throw new ObjectOptimisticLockingFailureException(Task.class, taskId);
-       }
 
        if(!task.getProject().getIsActive()) {
            throw new InvalidProjectStateException("Cannot update task in inactive project");
+       }
+
+       if(user.getRole() == Role.DEVELOPER) {
+           if(!task.getAssignedTo().getUserId().equals(userId)) {
+               throw new UnAuthorizedActionException("You can update only your assigned tasks");
+           }
+       } else if (user.getRole() == Role.ADMIN || user.getRole() == Role.MANAGER) {
+           throw new UnAuthorizedActionException("You ar not allowed to change the status of the task");
+       }
+
+       if(!task.getVersion().equals(dto.getVersion())) {
+           throw new ObjectOptimisticLockingFailureException(Task.class, taskId);
        }
 
        validateTransition(task.getStatus(), dto.getStatus());
@@ -189,9 +195,17 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public Page<TaskResponseDTO> getTasksByUser(Long userId, Integer page, Integer size, String sortBy, String sortDir) {
+    public Page<TaskResponseDTO> getTasksByUser(Long userId, Long requesterId, Integer page, Integer size, String sortBy, String sortDir) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID - " + userId));
+
+        User requester = userRepository.findById(requesterId)
+                .orElseThrow(() -> new ResourceNotFoundException("Requester not found with ID - " + requesterId));
+
+        if(requester.getRole() != Role.ADMIN && requester.getRole() != Role.MANAGER && !requester.getUserId().equals(userId)) {
+            throw new UnAuthorizedActionException("You are not allowed to view the user's tasks");
+        }
+
         Sort sort = sortDir.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();

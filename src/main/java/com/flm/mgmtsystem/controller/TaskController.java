@@ -94,12 +94,13 @@ public class TaskController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<Page<TaskResponseDTO>> getTasksByUser(
             @PathVariable Long userId,
+            @RequestHeader ("X-USER-ID") Long requesterId,
             @RequestParam (defaultValue = "0") Integer page,
             @RequestParam (defaultValue = "5") Integer size,
             @RequestParam (defaultValue = "taskId") String sortBy,
             @RequestParam (defaultValue = "asc") String sortDir
     ) {
-        return ResponseEntity.ok(taskService.getTasksByUser(userId, page, size, sortBy, sortDir));
+        return ResponseEntity.ok(taskService.getTasksByUser(userId, requesterId, page, size, sortBy, sortDir));
     }
 
 

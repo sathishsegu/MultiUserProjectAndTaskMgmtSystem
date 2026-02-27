@@ -81,7 +81,7 @@ public class GlobalExceptionHandler {
         response.setTimeStamp(LocalDateTime.now());
         response.setStatus(HttpStatus.CONFLICT.value());
         response.setError(HttpStatus.CONFLICT.getReasonPhrase());
-        response.setMessage("Task was modified by another Manager");
+        response.setMessage("Task was modified by another user");
         response.setPath(request.getRequestURI());
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
