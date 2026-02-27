@@ -10,13 +10,13 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p123"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p1561"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   app:
-    image: mgmt-system:v1.1
+    image: mgmt-system:v1.2
     build: .
     container_name: mgmt-system
     depends_on:
