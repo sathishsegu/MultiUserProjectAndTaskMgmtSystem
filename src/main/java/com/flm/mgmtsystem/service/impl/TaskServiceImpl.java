@@ -42,8 +42,8 @@ public class TaskServiceImpl implements TaskService {
 
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID - " + userId));
-        if(creator.getRole() != Role.MANAGER && creator.getRole() != Role.ADMIN) {
-            throw new UnAuthorizedActionException("Developer can't assign a task");
+        if(creator.getRole() != Role.MANAGER) {
+            throw new UnAuthorizedActionException("Only MANAGER can create a task");
         }
 
         Project project = projectRepository.findById(dto.getProjectId())
