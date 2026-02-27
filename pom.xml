@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.flm</groupId>
     <artifactId>MgmtSystem</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <name>MultiUserProjectAndTaskMgmtSystem</name>
     <description>MultiUserProjectAndTaskMgmtSystem</description>
     <url/>
@@ -88,6 +88,7 @@
     </dependencies>
 
     <build>
+        <finalName>mgmt-system</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
