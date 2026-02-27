@@ -42,14 +42,20 @@ public class TaskServiceImpl implements TaskService {
 
         User creator = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID - " + userId));
+
         if(creator.getRole() != Role.MANAGER) {
             throw new UnAuthorizedActionException("Only MANAGER can create a task");
         }
 
         Project project = projectRepository.findById(dto.getProjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID - " + dto.getProjectId()));
+
         if(!project.getIsActive()) {
             throw new InvalidProjectStateException("Cannot create task for Inactive project");
+        }
+
+        if(!project.getUsers().contains(creator)) {
+            throw new UnAuthorizedActionException("Manager not part of this project");
         }
 
         User assignedUser = userRepository.findById(dto.getAssignedToUserId())
@@ -76,6 +82,7 @@ public class TaskServiceImpl implements TaskService {
     public TaskResponseDTO reAssignTask(Long taskId, Long userId, ReAssignTaskRequestDTO dto) {
         User manager = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Manager not found with ID - " + userId));
+
         if(manager.getRole() != Role.MANAGER) {
             throw new UnAuthorizedActionException("Only MANAGER can re assign a task");
         }
@@ -93,6 +100,10 @@ public class TaskServiceImpl implements TaskService {
             throw new InvalidProjectStateException("Cannot reassign task in inactive project");
         }
 
+        if(!project.getUsers().contains(manager)) {
+            throw new UnAuthorizedActionException("Manager not part of this project");
+        }
+
         User newUser = userRepository.findById(dto.getNewAssignedUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID - " + dto.getNewAssignedUserId()));
 
@@ -100,7 +111,6 @@ public class TaskServiceImpl implements TaskService {
 
         if(!projectUsers.contains(newUser)) {
             throw new InvalidAssignmentException("User not assigned to this project");
-
         }
 
         if(newUser.getRole() != Role.DEVELOPER) {
@@ -179,7 +189,7 @@ public class TaskServiceImpl implements TaskService {
             throw new InvalidProjectStateException("Project is Inactive");
         }
 
-        if(!project.getUsers().contains(user) && user.getRole() != Role.ADMIN && user.getRole() != Role.MANAGER) {
+        if(!project.getUsers().contains(user) && user.getRole() != Role.ADMIN) {
             throw new UnAuthorizedActionException("User does not have access to this project");
         }
 

@@ -54,11 +54,15 @@ public class ProjectServiceImpl implements ProjectService {
             throw new InvalidProjectStateException("Cannot add user/s to Inactive projects");
         }
 
-        User user = userRepository.findById(userId)
+        User requester = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with ID - " + userId));
 
-        if(user.getRole() != Role.ADMIN && user.getRole() != Role.MANAGER) {
-            throw new UnAuthorizedActionException("Developer can't add another developer to the project");
+        if(requester.getRole() != Role.ADMIN && requester.getRole() != Role.MANAGER) {
+            throw new UnAuthorizedActionException("Only ADMIN or MANAGER can add users");
+        }
+
+        if(requester.getRole() == Role.MANAGER && !project.getUsers().contains(requester)) {
+            throw new UnAuthorizedActionException("Manager not part of this project");
         }
 
         List<User> usersToAdd = userRepository.findAllById(dto.getUserIds());

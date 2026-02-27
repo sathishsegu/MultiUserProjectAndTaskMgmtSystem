@@ -40,12 +40,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUnAuthorizedAction(UnAuthorizedActionException ex, HttpServletRequest request) {
         ErrorResponse response = new ErrorResponse();
         response.setTimeStamp(LocalDateTime.now());
-        response.setStatus(HttpStatus.UNAUTHORIZED.value());
-        response.setError(HttpStatus.UNAUTHORIZED.getReasonPhrase());
+        response.setStatus(HttpStatus.FORBIDDEN.value());
+        response.setError(HttpStatus.FORBIDDEN.getReasonPhrase());
         response.setMessage(ex.getMessage());
         response.setPath(request.getRequestURI());
 
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
     @ExceptionHandler(InvalidProjectStateException.class)

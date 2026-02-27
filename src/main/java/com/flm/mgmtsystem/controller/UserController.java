@@ -33,7 +33,7 @@ public class UserController {
             description = "Creates a new User with role like ADMIN, MANAGER, DEVELOPER"
     )
     @PostMapping
-    public ResponseEntity<UserResponseDTO> createStudent(@Valid @RequestBody UserRequestDTO dto) {
+    public ResponseEntity<UserResponseDTO> createUser(@Valid @RequestBody UserRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(dto));
     }
 }
