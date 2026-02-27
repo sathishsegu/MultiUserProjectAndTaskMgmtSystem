@@ -1,9 +1,6 @@
 package com.flm.mgmtsystem.service.impl;
 
-import com.flm.mgmtsystem.dto.ReAssignTaskRequestDTO;
-import com.flm.mgmtsystem.dto.TaskRequestDTO;
-import com.flm.mgmtsystem.dto.TaskResponseDTO;
-import com.flm.mgmtsystem.dto.UpdateTaskStatusRequestDTO;
+import com.flm.mgmtsystem.dto.*;
 import com.flm.mgmtsystem.entity.Project;
 import com.flm.mgmtsystem.entity.Task;
 import com.flm.mgmtsystem.entity.User;
@@ -15,6 +12,10 @@ import com.flm.mgmtsystem.repository.TaskRepository;
 import com.flm.mgmtsystem.repository.UserRepository;
 import com.flm.mgmtsystem.service.TaskService;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
@@ -158,5 +159,71 @@ public class TaskServiceImpl implements TaskService {
        task.setStatus(dto.getStatus());
        Task updatedTask = taskRepository.save(task);
        return modelMapper.map(updatedTask, TaskResponseDTO.class);
+    }
+
+    @Override
+    public Page<TaskResponseDTO> getTasksByProject(Long projectId, Long userId, Integer page, Integer size, String sortBy, String sortDir) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID - " + userId));
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with ID - " + projectId));
+
+        if(!project.getIsActive()) {
+            throw new InvalidProjectStateException("Project is Inactive");
+        }
+
+        if(!project.getUsers().contains(user) && user.getRole() != Role.ADMIN && user.getRole() != Role.MANAGER) {
+            throw new UnAuthorizedActionException("User does not have access to this project");
+        }
+
+        Sort sort = sortDir.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<Task> taskPage = taskRepository.findByProject(project, pageable);
+
+        return taskPage.map(task -> modelMapper.map(task, TaskResponseDTO.class));
+    }
+
+    @Override
+    public Page<TaskResponseDTO> getTasksByUser(Long userId, Integer page, Integer size, String sortBy, String sortDir) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID - " + userId));
+        Sort sort = sortDir.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<Task> taskPage = taskRepository.findByAssignedTo(user, pageable);
+
+        return taskPage.map(task -> modelMapper.map(task, TaskResponseDTO.class));
+    }
+
+    @Override
+    public Page<TaskResponseDTO> getTasksByStatus(Status status, Long userId, Integer page, Integer size, String sortBy, String sortDir) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID - " + userId));
+
+        Sort sort = sortDir.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<Task> taskPage;
+
+        if(user.getRole() == Role.ADMIN) {
+            taskPage = taskRepository.findByStatus(status, pageable);
+        } else if (user.getRole() == Role.MANAGER) {
+            taskPage = taskRepository.findByStatusAndProjectIn(status, user.getProjects(), pageable);
+        } else {
+            taskPage = taskRepository.findByStatusAndAssignedTo(status, user, pageable);
+        }
+
+        return taskPage.map(task -> modelMapper.map(task, TaskResponseDTO.class));
     }
 }
